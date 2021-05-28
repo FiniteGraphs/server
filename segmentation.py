@@ -1,9 +1,12 @@
+from image_to_graph import getGraph
 import sys
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton
 from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor
 import numpy as np
+import networkx as nx
 from main import createArrayFromImage
+from image_to_graph import getGraph
 import math
 
 class Menu(QMainWindow):
@@ -16,7 +19,7 @@ class Menu(QMainWindow):
         self.image = QPixmap(self.imagePath)
         self.bgPoints = None
         self.objPoints = None
-        self.sigma = 3
+        self.sigma = 2
         btnB = QPushButton("Background", self)
         btnB.setStyleSheet("background-color: red")
         btnB.move(0, 0)
@@ -70,36 +73,12 @@ class Menu(QMainWindow):
     def saveImage(self, fileName, fileFormat):
         self.image.save(fileName, fileFormat)
 
-    def getPointIndex(self, row, col, col_sum):
-        index = col + col_sum*row
-        return index
-    
-    def weight(self, a, b):
-        weight = math.exp(pow(a-b, 2))/self.sigma
-        return weight
-
-    def createLinkedList(self, array):
-        num_of_rows, num_of_columns = array.shape
-        linkedList = np.empty(shape=[0, 3])
-        for row in range(num_of_rows):
-            for col in range(num_of_columns):
-                index = self.getPointIndex(row, col, num_of_columns)
-                if col != num_of_columns:
-                    linkedList = np.append(linkedList, [[index, index+1, self.weight(index, index+1)]])
-                if col != 0:
-                    linkedList = np.append(linkedList, [[index, index-1, self.weight(index, index-1)]])
-                if row != 0:
-                    linkedList = np.append(linkedList, [[index, self.getPointIndex(row-1, col, num_of_columns), self.weight(index, index-1)]])
-                if row != num_of_rows:
-                    linkedList = np.append(linkedList, [[index, self.getPointIndex(row+1, col, num_of_columns), self.weight(index, index-1)]])
-        print(linkedList)
-
-
-
     def onSegment(self):
         print(self.bgPoints, "|||", self.objPoints)
         imgArray = createArrayFromImage(self.imagePath)
-        self.createLinkedList(imgArray)
+        height, width = imgArray.shape
+        print('Height: ', height, '  Width: ', width)
+        getGraph(width, height, imgArray)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

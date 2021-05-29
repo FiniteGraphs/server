@@ -17,8 +17,8 @@ class Menu(QMainWindow):
         self.lastPoint = QPoint()
         self.imagePath="C:\graphs\server\image.jpg"
         self.image = QPixmap(self.imagePath)
-        self.bgPoints = None
-        self.objPoints = None
+        self.bgPoints = np.array([[0, 0]], np.int32)
+        self.objPoints = np.array([[0, 0]], np.int32)
         self.sigma = 2
         btnB = QPushButton("Background", self)
         btnB.setStyleSheet("background-color: red")
@@ -28,12 +28,14 @@ class Menu(QMainWindow):
         btnO.move(120, 0)
         btnS = QPushButton("Submit", self)
         btnS.move(240, 0)
+        btnB.clicked.connect(self.onSetBackground)
+        btnO.clicked.connect(self.onSetObject)
         btnS.clicked.connect(self.onSegment)
-        
+        self.setBgPoints = True
         self.statusBar()
         self.statusBar().setStyleSheet("color: white")
-        self.statusBar().showMessage('Background select')
-        self.setGeometry(100, 100, 500, 300)
+        self.statusBar().showMessage('Background select. Please set more than 10 points')
+        self.setGeometry(300, 300, 1000, 1000)
         self.resize(self.image.width(), self.image.height())
         self.show()
 
@@ -42,29 +44,34 @@ class Menu(QMainWindow):
         painter.drawPixmap(self.rect(), self.image)
 
     def mousePressEvent(self, event):
-        needPoints = False
-        if self.bgPoints is None or self.objPoints is None:
-                needPoints = True
-        if event.button() == Qt.LeftButton and event.buttons() and needPoints:
-            drawBg = True
-            if self.bgPoints is not None:
-                drawBg = False
+        if event.button() == Qt.LeftButton:
             self.drawing = True
             self.lastPoint = event.pos()
             painter = QPainter(self.image)
-            if drawBg:
-                painter.setPen(QPen(QColor(255 ,0, 0, 100), 5, Qt.SolidLine))
+            if (self.setBgPoints):
+                painter.setPen(QPen(QColor(255 , 0, 0, 100), 5, Qt.SolidLine))
                 painter.drawLine(self.lastPoint, event.pos())
-                self.lastPoint = event.pos()
-                self.bgPoints = np.array([event.x(), event.y()])
-                self.statusBar().showMessage('Obect select')
+                x = int(event.x())
+                y = int(event.y())
+                pointAlreadyExisted = False
+                for i in range(len(self.bgPoints)-1):
+                    if self.bgPoints[i][0]==x and self.bgPoints[i][1]==y:
+                        pointAlreadyExisted = True
+                if pointAlreadyExisted != True:
+                    self.bgPoints = np.append(self.bgPoints, [[x, y]], axis=0)
             else:
                 painter.setPen(QPen(QColor(0 , 0, 255, 100), 5, Qt.SolidLine))
                 painter.drawLine(self.lastPoint, event.pos())
-                self.lastPoint = event.pos()
-                self.objPoints = np.array([event.x(), event.y()])
-                self.statusBar().showMessage('Press submit')
+                x = int(event.x())
+                y = int(event.y())
+                pointAlreadyExisted = False
+                for i in range(len(self.objPoints)-1):
+                    if self.objPoints[i][0]==x and self.objPoints[i][1]==y:
+                        pointAlreadyExisted = True
+                if pointAlreadyExisted != True:
+                    self.objPoints = np.append(self.objPoints, [[x, y]], axis=0)
             self.update()
+
 
     def mouseReleaseEvent(self, event):
         if event.button == Qt.LeftButton:
@@ -73,12 +80,25 @@ class Menu(QMainWindow):
     def saveImage(self, fileName, fileFormat):
         self.image.save(fileName, fileFormat)
 
+    def onSetBackground(self):
+        self.setBgPoints = True
+        self.statusBar().showMessage('Background select. Please set more than 10 points')
+
+    def onSetObject(self):
+        self.setBgPoints = False
+        self.statusBar().showMessage('Object select. Please set more than 10 points')
+
     def onSegment(self):
-        print(self.bgPoints, "|||", self.objPoints)
-        imgArray = createArrayFromImage(self.imagePath)
-        height, width = imgArray.shape
-        print('Height: ', height, '  Width: ', width)
-        getGraph(width, height, imgArray)
+        if len(self.bgPoints) < 10 or (len(self.objPoints) < 10):
+            self.statusBar().showMessage('Please set more points')
+        else:
+            self.bgPoints = np.delete(self.bgPoints, [0, 0], axis=0)
+            self.objPoints = np.delete(self.objPoints, [0, 0], axis=0)
+            print(self.bgPoints, "|||", self.objPoints)
+            imgArray = createArrayFromImage(self.imagePath)
+            height, width = imgArray.shape
+            print('Height: ', height, '  Width: ', width)
+            getGraph(width, height, imgArray, self.bgPoints, self.objPoints)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

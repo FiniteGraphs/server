@@ -94,7 +94,7 @@ class Menu(QMainWindow):
         else:
             self.bgPoints = np.delete(self.bgPoints, [0, 0], axis=0)
             self.objPoints = np.delete(self.objPoints, [0, 0], axis=0)
-            print(self.bgPoints, "|||", self.objPoints)
+            print('Вы ввели ', len(self.bgPoints) + len(self.objPoints), ' пикселей')
             imgArray = createArrayFromImage(self.imagePath)
             height, width = imgArray.shape
             print('Height: ', height, '  Width: ', width)

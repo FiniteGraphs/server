@@ -108,11 +108,9 @@ def getGraph(width, height, array, bgPoints, objPoints):
         if(to == s or to == t):
             continue
         array[to//width][to%width] = 255
-
-    print(array)
     im = Image.fromarray(array)
     im.save("output.jpg")
-    print(np.sum(array))
+    print('Successfull!')
      
 
 

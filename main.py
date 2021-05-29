@@ -25,7 +25,6 @@ def createArrayFromImage(img_path):
     img = Image.open(img_path)
     to_black(img)
     arrayIm = to_array(img)
-    print(arrayIm)
     return arrayIm
 
 if __name__ == '__main__':
